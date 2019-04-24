@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-from scapy.all import IP, UDP, TCP, send
+from scapy.all import IP, UDP, TCP, send, conf
 import argparse
 import string
 import random
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-sp", type=int, default=5060, help="The source port")
 parser.add_argument("-dp", type=int, default=5060, help="The destination port")
 parser.add_argument("-tt", action="store_true", help="Transport TCP")
 parser.add_argument("-dst", default="127.0.0.2", help="The destination IP")
-parser.add_argument("-src", default="127.0.0.1", help="The source IP")
+parser.add_argument("-src", action="store_true", help="The source IP")
 parser.add_argument("-c", type=int, default=1, help="Packet count per destination")
 
 parser.add_argument("-fuser", type=str, default="yeet", help="SIP FROM User")
@@ -26,13 +28,32 @@ parser.parse_args()
 args = parser.parse_args()
 
 sourcePort = args.sp
+sourceIp = False
 destinationPort = args.dp
 destinationIp = args.dst
-sourceIp = args.src
+
+def printd(s):
+    if args.v:
+        print(s)        
 
 sipTag = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 sipBranch = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 sipCallId = ''.join(random.choices(string.ascii_lowercase + string.digits, k=32))
+
+# Try to figure out the sourceIp
+if args.src:
+    # Well that was easy! User kindly provided one!
+    sourceIp = args.src
+    printd("User provided source address: {0}".format(sourceIp))
+else:
+    # Ooof. Let's scrounge the interfaces and take the address of the one with default gw
+    sourceIp = [x[4] for x in conf.route.routes if x[2] != '0.0.0.0'][0]    
+    if not sourceIp:
+        # Big ooof. No adapter with default gw either, default to loopback
+        printd("Couldn't figure out source address. Defaulting to loopback.")
+        sourceIp = "127.0.0.1"
+    else:
+        printd("Dark blockchain AI figured out source address: {0}".format(sourceIp))
 
 ip=IP(src=sourceIp, dst=destinationIp)
 
@@ -53,9 +74,8 @@ myPayload=(
     'Content-Length: 0\r\n\r\n').format(destinationIp, destinationPort, sourceIp, sourcePort, 
         args.fuser, args.tuser, transport, transport.upper(), sipBranch, sipTag, sipCallId)
 
-if args.v:
-    print("Payload to be yeeted:")
-    print(myPayload)
+printd("Payload to be yeeted:")
+printd(myPayload)
 
 if not args.dry_run:
     if transport=="tcp":
