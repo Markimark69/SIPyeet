@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from scapy.all import *
+from scapy.all import IP, UDP, TCP, send
 import argparse
 import string
-from random import choices
+import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-sp", type=int, default=5060, help="The source port")
