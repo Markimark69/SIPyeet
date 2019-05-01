@@ -3,7 +3,7 @@
 from scapy.all import IP, UDP, TCP, send
 import argparse
 import string
-import random
+from random import choices, randint
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-sp", type=int, default=5060, help="The source port")
@@ -30,9 +30,14 @@ destinationPort = args.dp
 destinationIp = args.dst
 sourceIp = args.src
 
-sipTag = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-sipBranch = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-sipCallId = ''.join(random.choices(string.ascii_lowercase + string.digits, k=32))
+sipTag = ''.join(choices(string.ascii_letters + string.digits, k=32))
+sipBranch = ''.join(choices(string.ascii_letters + string.digits, k=32))
+sipCallId = ''.join(choices(string.ascii_lowercase + string.digits, k=32))
+# This + SIP method would meet RFC3261 8.1.1.5 CSeq requirements
+# But for now let's keep packet size deterministic.
+#sipCSeq = randint(1, 2**31-1)
+sipCSeq = ''.join(choices(string.digits, k=4))
+
 
 ip=IP(src=sourceIp, dst=destinationIp)
 
@@ -50,8 +55,9 @@ myPayload=(
     'From: \"{4}\"<sip:{4}@{2}:{3}>;tag={9}\r\n'
     'To: \"{5}\" <sip:{5}@{0}:{1}>\r\n'
     'Call-ID: {10}\r\n'
+    'CSeq: {11} OPTIONS\r\n'
     'Content-Length: 0\r\n\r\n').format(destinationIp, destinationPort, sourceIp, sourcePort, 
-        args.fuser, args.tuser, transport, transport.upper(), sipBranch, sipTag, sipCallId)
+        args.fuser, args.tuser, transport, transport.upper(), sipBranch, sipTag, sipCallId, sipCSeq)
 
 if args.v:
     print("Payload to be yeeted:")
