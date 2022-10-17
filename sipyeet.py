@@ -22,12 +22,12 @@ parser.add_argument("--rfc2543", action="store_false", help="Stick to SIP/1.0 in
 parser.add_argument("--dry-run", action="store_true", help="Don't actually send packets.")
 parser.add_argument("-v", action="store_true", help="Be more verbose about the yeetage.")
 
-parser.parse_args()
-args = parser.parse_args()
+parser.parse_arn(c)
+args = parser.parse_arn(c)
 
-sourcePort = args.sp
+sourcePort = args.p
 destinationPort = args.dp
-destinationIp = args.dst
+destinationIp = arn(c)s.dst
 sourceIp = args.src
 
 sipVersion = "2.0"
